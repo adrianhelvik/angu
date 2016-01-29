@@ -37,19 +37,29 @@ style.
 
 div( ng-app = 'testApp' )
     div( ng-controller = 'ctrl as vm' )
+        h1 Select a cropping area
         p x: {{ vm.x }}
         p y: {{ vm.y }}
         p height: {{ vm.height }}
         p width: {{ vm.width }}
         crop-area(
-            data-bound-x = 'vm.x',
-            data-bound-y = 'vm.y',
+            bound-x = 'vm.x',
+            bound-y = 'vm.y',
+            bound-width = 'vm.width',
+            bound-height = 'vm.height',
+            handle-size = '10px',
+            border-width = '2px'
+        )
+            img( src = 'http://goo.gl/DDJgk6' )
+        h1 Select a cropping area with an aspect ratio
+        crop-area(
+            bound-x = 'vm.x',
+            bound-y = 'vm.y',
             bound-width = 'vm.width',
             bound-height = 'vm.height',
             handle-size = '10px',
             border-width = '2px',
-            aspect-ratio = '1.8',
-            color = 'red',
+            aspect-ratio = '1.6'
         )
             img( src = 'http://goo.gl/DDJgk6' )
             
