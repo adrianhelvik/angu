@@ -39,6 +39,12 @@ style.
         position: absolute;
         z-index: 2;
     }
+    img {
+        max-width: 100%;
+    }
+    .largeInput {
+        font-size: 2em;
+    }
 
 div( class = '_content' ng-app = 'testApp' )
     div( ng-controller = 'ctrl as vm' )
@@ -57,26 +63,28 @@ div( class = '_content' ng-app = 'testApp' )
                 default-width = '400px',
                 default-height = '200px'
             )
-                img( src = 'http://goo.gl/DDJgk6' )
+                img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
         
         div
-            h1 Select a cropping area with an aspect ratio
+            h1 Enter an aspect ratio
+            input.largeInput( ng-model = 'vm.aspectRatio' )
             p Pixel units are used for when no unit is specified
             crop-area(
                 handle-size = '40px',
                 border-width = '2px',
-                aspect-ratio = '2.3',
+                aspect-ratio = 'vm.aspectRatio',
                 default-width = '400px'
             )
-                img( src = 'http://goo.gl/DDJgk6' )
+                img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
         
         div
             h1 Select a cropping area with an aspect ratio
             crop-area(
                 aspect-ratio = '0.6'
             )
-                img( src = 'http://goo.gl/DDJgk6' )
+                img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
             
+p Many thanks to Kovacs.szilard of Wikimedia for releasing the imageunder a public licence.
 
 script( src = 'https://code.angularjs.org/1.4.8/angular.js' )
 script( src = 'crop-area.js' )

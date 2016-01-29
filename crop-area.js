@@ -31,7 +31,7 @@
                 handleSize:     '@', // integer | integer text: optional
                 defaultWidth:   '@', // integer | integer text: if not set, a default value us used
                 defaultHeight:  '@', // integer | integer text: if not set, a default value us used
-                aspectRatio:    '@', // float | integer text: if not set, no aspect ratio is used
+                aspectRatio:    '=', // float | integer text: if not set, no aspect ratio is used
             },
             link: linkFunction 
         };
@@ -75,7 +75,6 @@
         options.defaultWidth  = parseNumber( scope.defaultWidth,  { defaultValue: calculateFullWidth() } );
         options.defaultX      = parseNumber( scope.defaultX,      { defaultValue: 10 });
         options.defaultY      = parseNumber( scope.defaultY,      { defaultValue: 10 });
-        options.aspectRatio   = parseNumber( scope.aspectRatio,   { defaultValue: false } );
 
         // Model
         // -----
@@ -89,12 +88,12 @@
             fullWidth:  calculateFullWidth()
         };
 
-        if ( options.aspectRatio ) {
+        if ( scope.aspectRatio ) {
             
             if ( options.defaultWidth ) {
-                model.height = model.width / options.aspectRatio;
+                model.height = model.width / scope.aspectRatio;
             } else {
-                model.width = model.height * options.aspectRatio;
+                model.width = model.height * scope.aspectRatio;
             }
         }
 
@@ -122,8 +121,8 @@
 
             model.height = relativeY - model.y - options.handleSize/2;
 
-            if ( options.aspectRatio ) {
-                model.width = model.height * options.aspectRatio;
+            if ( scope.aspectRatio ) {
+                model.width = model.height * scope.aspectRatio;
             }
 
             else {
@@ -151,6 +150,14 @@
 
             model.x = relativeX - model.width/2;
             model.y = relativeY - model.height/2;
+
+            positionElements();
+        } );
+
+        scope.$watch( 'aspectRatio', function () {
+            if ( scope.aspectRatio ) {
+                model.width = model.height * scope.aspectRatio;
+            }
 
             positionElements();
         } );
@@ -276,7 +283,6 @@
         function parseNumber( possibleNumber, options ) {
             if ( typeof possibleNumber === 'string' ) {
                 possibleNumber = possibleNumber.replace(/[a-zA-Z\s]+/g, '');
-                console.log( possibleNumber );
             }
 
             if ( isNumeric( possibleNumber ) ) {
@@ -310,8 +316,8 @@
             if ( model.height > model.fullHeight ) {
                 model.height = ( model.fullHeight - model.y );
 
-                if ( options.aspectRatio ) {
-                    model.width = model.height * options.aspectRatio;
+                if ( scope.aspectRatio ) {
+                    model.width = model.height * scope.aspectRatio;
                 }
             }
 
@@ -324,8 +330,8 @@
             if ( model.width > model.fullWidth ) {
                 model.width = model.fullWidth;
 
-                if ( options.aspectRatio ) {
-                    model.height = model.width / options.aspectRatio; // Check height??? Loopy?
+                if ( scope.aspectRatio ) {
+                    model.height = model.width / scope.aspectRatio; // Check height??? Loopy?
                 }
             }
             
