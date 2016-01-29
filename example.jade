@@ -1,0 +1,68 @@
+doctype html
+
+meta( charset = 'utf-8' )
+style.
+    .CropArea {
+        margin-top: 100px;
+        margin-left: 100px;
+    }
+    .CropArea-container {
+        display: inline-block;
+        position: relative;
+    }
+    .CropArea img {
+        display: block;
+    }
+    .CropArea-left, .CropArea-right, .CropArea-top, .CropArea-bottom, .CropArea-handle {
+        position: absolute;
+        background-color: rgba( 256, 256, 256, 0.8 );
+    }
+    .CropArea-left, .CropArea-right {
+        width: 3px;
+    }
+    .CropArea-top, .CropArea-bottom {
+        height: 3px;
+    }
+    .CropArea-handle {
+        z-index: 3;
+    }
+    .CropArea-shade {
+        position: absolute;
+        background-color: rgba( 256, 256, 256, 0.6 );
+    }
+    .CropArea-croppedArea {
+        position: absolute;
+        z-index: 2;
+    }
+
+div( ng-app = 'testApp' )
+    div( ng-controller = 'ctrl as vm' )
+        p x: {{ vm.x }}
+        p y: {{ vm.y }}
+        p height: {{ vm.height }}
+        p width: {{ vm.width }}
+        crop-area(
+            data-bound-x = 'vm.x',
+            data-bound-y = 'vm.y',
+            bound-width = 'vm.width',
+            bound-height = 'vm.height',
+            handle-size = '10px',
+            border-width = '2px',
+            aspect-ratio = '1.8',
+            color = 'red',
+        )
+            img( src = 'http://goo.gl/DDJgk6' )
+            
+
+script( src = 'https://code.angularjs.org/1.4.8/angular.js' )
+script( src = 'crop-area.js' )
+script.
+    angular.module( 'testApp', [ 'cropArea' ] )
+
+    angular.module( 'testApp' ).controller( 'ctrl', function ( $scope ) {
+        this.x;
+        this.y;
+        this.width;
+        this.height;
+    } );
+
