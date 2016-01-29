@@ -176,8 +176,16 @@
             }
         }
 
+        function roundUnits() {
+            model.x = parseInt( model.x );
+            model.y = parseInt( model.y );
+            model.width = parseInt( model.width );
+            model.height = parseInt( model.height );
+        }
+
         function positionElements() {
             
+            roundUnits();
             boundCheck();
             updateScope();
 
