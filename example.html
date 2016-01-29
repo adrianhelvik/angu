@@ -1,0 +1,51 @@
+<!DOCTYPE html><meta charset="utf-8"><style>* {
+    font-family: sans-serif;
+}
+._content {
+    margin: 40px auto;
+    width: 70%;
+}
+.CropArea {
+}
+.CropArea-container {
+    display: inline-block;
+    position: relative;
+}
+.CropArea img {
+    display: block;
+}
+.CropArea-left, .CropArea-right, .CropArea-top, .CropArea-bottom, .CropArea-handle {
+    position: absolute;
+    background-color: rgba( 256, 256, 256, 0.8 );
+}
+.CropArea-left, .CropArea-right {
+    width: 3px;
+}
+.CropArea-top, .CropArea-bottom {
+    height: 3px;
+}
+.CropArea-handle {
+    z-index: 3;
+}
+.CropArea-shade {
+    position: absolute;
+    background-color: rgba( 256, 256, 256, 0.6 );
+}
+.CropArea-croppedArea {
+    position: absolute;
+    z-index: 2;
+}
+img {
+    max-width: 100%;
+}
+.largeInput {
+    font-size: 2em;
+}
+</style><div ng-app="testApp" class="_content"><div ng-controller="ctrl as vm"><div><h1>Get scope variables from crop-area</h1><p>x: {{ vm.x }}</p><p>y: {{ vm.y }}</p><p>height: {{ vm.height }}</p><p>width: {{ vm.width }}</p><crop-area bound-x="vm.x" bound-y="vm.y" bound-width="vm.width" bound-height="vm.height" default-width="400px" default-height="200px"><img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg"></crop-area></div><div><h1>Enter an aspect ratio</h1><input ng-model="vm.aspectRatio" class="largeInput"><p>Pixel units are used for when no unit is specified</p><crop-area handle-size="40px" border-width="2px" aspect-ratio="vm.aspectRatio" default-width="400px"><img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg"></crop-area></div><div><h1>Select a cropping area with an aspect ratio</h1><crop-area aspect-ratio="0.6"><img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg"></crop-area></div></div></div><p>Many thanks to Kovacs.szilard of Wikimedia for releasing the imageunder a public licence.</p><script src="https://code.angularjs.org/1.4.8/angular.js"></script><script src="crop-area.js"></script><script>angular.module( 'testApp', [ 'cropArea' ] )
+
+angular.module( 'testApp' ).controller( 'ctrl', function ( $scope ) {
+    this.x;
+    this.y;
+    this.width;
+    this.height;
+} );</script>
