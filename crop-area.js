@@ -1,4 +1,10 @@
 //
+// TODO: Clear events on scope destruction
+// TODO: Pinch and zoom causes scaling issue because of 'canvasDistance'
+//
+
+
+//
 // The code
 //
 
@@ -109,7 +115,7 @@
         handle[0].setAttribute( 'draggable', 'true' );
         croppedArea[0].setAttribute( 'draggable', 'true' );
 
-        // Drag events: handle // DONE: ok
+        // Drag events: handle
 
         handle.on( 'dragstart', function ( event ) {
             event.dataTransfer.setDragImage( emptyElement, 0, 0 );
@@ -148,21 +154,13 @@
 
         } );
 
-        // TODO: test
-        angular.element( document ).on( 'resize', function ( event ) {
-            positionElements();
-        } );
 
         // Drag events: cropped area
 
         croppedArea.on( 'dragstart', function ( event ) {
             event.dataTransfer.setDragImage( emptyElement, 0, 0 );
 
-            model.canvasDistance = {
-                top: ( event.clientY - this.getBoundingClientRect().top ) / model.fullHeight * 100,
-                left: ( event.clientX - this.getBoundingClientRect().left ) / model.fullWidth * 100
-            }
-
+            calculateCanvasDistance( event );
         } );
 
         croppedArea.on( 'drag touchmove', function ( event ) {
@@ -199,8 +197,45 @@
             positionElements();
         } );
 
+        // Dragevents: document --- handle the few pixel units needed
+
+        ( function () {
+            var interrupted;
+            var complete = false;
+
+            angular.element( window ).on( 'resize', function() {
+                interrupted = true;
+                poll( this, event );
+            });
+
+            function performCalculations( element, event ) {
+                model.fullWidth = calculateFullWidth();
+                model.fullHeight = calculateFullHeight();
+                model.canvasDistance = calculateCanvasDistance( event );
+            }
+
+            function poll( element, event ) {
+                interrupted = false;
+                setTimeout( function () {
+                    if ( ! interrupted && ! complete ) {
+                        complete = true;
+                        performCalculations( element, event );
+                        complete = false;
+                    }
+                }, 500 );
+            }
+
+        } ).call( this );
+
         // Implementation
         // --------------
+
+        function calculateCanvasDistance( event ) {
+            return model.canvasDistance = {
+                top: ( event.clientY - croppedArea[0].getBoundingClientRect().top ) / model.fullHeight * 100,
+                left: ( event.clientX - croppedArea[0].getBoundingClientRect().left ) / model.fullWidth * 100
+            }
+        }
 
         function updateScope() {
             scope.boundX = model.x;
