@@ -38,9 +38,11 @@
                 boundY:         '=cropY',
                 boundWidth:     '=cropWidth',
                 boundHeight:    '=cropHeight',
-                handleSize:     '@', // integer | integer text: optional
-                defaultWidth:   '@', // integer | integer text: if not set, a default value us used
-                defaultHeight:  '@', // integer | integer text: if not set, a default value us used
+                handleSize:     '@', // integer | text: optional
+                defaultWidth:   '@', // integer | text: if not set, a default value is used
+                defaultHeight:  '@', // integer | text: if not set, a default value is used
+                defaultX:       '@', // integer | text: if not set, a default value is used
+                defaultY:       '@', // integer | text: if not set, a default value is used
                 aspectRatio:    '=cropAspectRatio', // float | integer text: if not set, no aspect ratio is used
             },
             link: linkFunction
@@ -86,146 +88,162 @@
         options.defaultX      = parseNumber( scope.defaultX,      { defaultValue: 10 });
         options.defaultY      = parseNumber( scope.defaultY,      { defaultValue: 10 });
 
-        // Model
-        // -----
-
-        var model = {
-            fullHeight: calculateFullHeight(),  // px
-            fullWidth:  calculateFullWidth(),   // px
-            x:          options.defaultX,       // % of fullWidth
-            y:          options.defaultY,       // % of fullHeight
-            height:     options.defaultHeight,  // % of fullHeight
-            width:      options.defaultWidth,   // % of fullWidth
-            canvasDistance: null
-        };
-
-        if ( scope.aspectRatio ) {
-
-            if ( options.defaultWidth ) {
-                model.height = model.width / scope.aspectRatio;
-            } else {
-                model.width = model.height * scope.aspectRatio;
-            }
-        }
-
         // Initialization
         // --------------
 
-        positionElements();
-        handle[0].setAttribute( 'draggable', 'true' );
-        croppedArea[0].setAttribute( 'draggable', 'true' );
+        var model = {};
+
+        rootElement.ready( function () {
+            model = {
+                fullHeight: calculateFullHeight(),  // px
+                fullWidth:  calculateFullWidth(),   // px
+                x:          options.defaultX,       // % of fullWidth
+                y:          options.defaultY,       // % of fullHeight
+                height:     options.defaultHeight,  // % of fullHeight
+                width:      options.defaultWidth,   // % of fullWidth
+                canvasDistance: null
+            };
+
+            if ( scope.aspectRatio ) {
+                if ( options.defaultWidth ) {
+                    model.height = model.width / scope.aspectRatio;
+                } else {
+                    model.width = model.height * scope.aspectRatio;
+                }
+            }
+
+            positionElements();
+            handle[0].setAttribute( 'draggable', 'true' );
+            croppedArea[0].setAttribute( 'draggable', 'true' );
+
+            registerEvents();
+
+            var pollerId = setInterval( function () {
+                if ( model.fullWidth !== 0 || model.fullHeight !== 0 ) {
+                    clearInterval( pollerId );
+                    positionElements();
+                }
+
+                calculateDimensions();
+                model.x = relativeX/model.fullWidth * 100 - model.canvasDistance.left;
+                model.y = relativeY/model.fullHeight * 100 - model.canvasDistance.top;
+            }, 200 );
+
+        } );
+
+        // Event registration
+        // ------------------
 
         // Drag events: handle
 
-        handle.on( 'dragstart', function ( event ) {
-            event.dataTransfer.setDragImage( emptyElement, 0, 0 );
-        } );
+        function registerEvents() {
+            handle.on( 'dragstart', function ( event ) {
+                event.dataTransfer.setDragImage( emptyElement, 0, 0 );
+            } );
 
-        handle.on( 'drag touchmove', function ( event ) {
+            handle.on( 'drag touchmove', function ( event ) {
+                if ( event.clientX ) {
+                    var clientX = event.clientX;
+                    var clientY = event.clientY;
+                } else if ( event.touches ) {
+                    var clientX = event.touches[0].clientX;
+                    var clientY = event.touches[0].clientY;
+                } else return;
 
-            if ( event.pageX ) {
-                var pageX = event.pageX;
-                var pageY = event.pageY;
-            } else if ( event.touches ) {
-                var pageX = event.touches[0].pageX;
-                var pageY = event.touches[0].pageY;
-            } else return;
-
-            event.preventDefault();
-
-            var relativeX = pageX - this.parentNode.offsetLeft + this.offsetWidth / 2;
-            var relativeY = pageY - this.parentNode.offsetTop + this.offsetHeight / 2;
-
-            if ( ! ( relativeX >= 0 && relativeY >= 0 ) ) {
-                return;
-            }
-
-            model.height = relativeY/model.fullHeight*100 - model.y - handleHeight()/2;
-
-            if ( scope.aspectRatio ) {
-                model.width = model.height * scope.aspectRatio;
-            }
-
-            else {
-                model.width = relativeX/model.fullWidth*100 - model.x - handleWidth()/2;
-            }
-
-            positionElements();
-
-        } );
-
-
-        // Drag events: cropped area
-
-        croppedArea.on( 'dragstart', function ( event ) {
-            event.dataTransfer.setDragImage( emptyElement, 0, 0 );
-
-            calculateCanvasDistance( event );
-        } );
-
-        croppedArea.on( 'drag touchmove', function ( event ) {
-
-            if ( event.pageX ) {
-                var pageX = event.pageX;
-                var pageY = event.pageY;
-            } else if ( event.touches ) {
                 event.preventDefault();
-                var pageX = event.touches[0].pageX;
-                var pageY = event.touches[0].pageY;
-            } else {
-                return;
-            }
 
-            var relativeX = pageX - this.parentNode.offsetLeft;
-            var relativeY = pageY - this.parentNode.offsetTop;
+                var relativeX = clientX - this.parentNode.getBoundingClientRect().left + this.offsetWidth / 2;
+                var relativeY = clientY - this.parentNode.getBoundingClientRect().top + this.offsetHeight / 2;
 
-            if ( ! ( relativeX >= 0 && relativeY >= 0 ) ) {
-                return;
-            }
+                if ( ! ( relativeX >= 0 && relativeY >= 0 ) ) {
+                    return;
+                }
 
-            model.x = relativeX/model.fullWidth * 100 - model.canvasDistance.left;
-            model.y = relativeY/model.fullHeight * 100 - model.canvasDistance.top;
+                model.height = relativeY/model.fullHeight*100 - model.y - handleHeight()/2;
 
-            positionElements();
-        } );
+                if ( scope.aspectRatio ) {
+                    model.width = model.height * scope.aspectRatio;
+                }
 
-        scope.$watch( 'aspectRatio', function () {
-            if ( scope.aspectRatio ) {
-                model.width = model.height * scope.aspectRatio;
-            }
+                else {
+                    model.width = relativeX/model.fullWidth*100 - model.x - handleWidth()/2;
+                }
 
-            positionElements();
-        } );
+                positionElements();
 
-        // Dragevents: document --- handle the few pixel units needed
+            } );
 
-        ( function () {
-            var interrupted;
-            var complete = false;
 
-            angular.element( window ).on( 'resize', function() {
-                interrupted = true;
-                poll( this, event );
-            });
+            // Drag events: cropped area
 
-            function performCalculations( element, event ) {
-                model.fullWidth = calculateFullWidth();
-                model.fullHeight = calculateFullHeight();
-                model.canvasDistance = calculateCanvasDistance( event );
-            }
+            croppedArea.on( 'dragstart', function ( event ) {
+                event.dataTransfer.setDragImage( emptyElement, 0, 0 );
 
-            function poll( element, event ) {
-                interrupted = false;
-                setTimeout( function () {
-                    if ( ! interrupted && ! complete ) {
-                        complete = true;
-                        performCalculations( element, event );
-                        complete = false;
-                    }
-                }, 500 );
-            }
+                calculateCanvasDistance( event );
+            } );
 
-        } ).call( this );
+            croppedArea.on( 'drag touchmove', function ( event ) {
+
+                if ( event.clientX ) {
+                    var clientX = event.clientX;
+                    var clientY = event.clientY;
+                } else if ( event.touches ) {
+                    event.preventDefault();
+                    var clientX = event.touches[0].clientX;
+                    var clientY = event.touches[0].clientY;
+                } else {
+                    return;
+                }
+
+                var relativeX = clientX - container[0].getBoundingClientRect().left;
+                var relativeY = clientY - container[0].getBoundingClientRect().top;
+
+                if ( ! ( relativeX >= 0 && relativeY >= 0 ) ) {
+                    return;
+                }
+
+                if ( model.fullWidth === 0 || model.fullHeight === 0 ) {
+                    calculateDimensions();
+                }
+
+                model.x = relativeX/model.fullWidth * 100 - model.canvasDistance.left;
+                model.y = relativeY/model.fullHeight * 100 - model.canvasDistance.top;
+
+                positionElements();
+            } );
+
+            scope.$watch( 'aspectRatio', function () {
+                if ( scope.aspectRatio ) {
+                    model.width = model.height * scope.aspectRatio;
+                }
+
+                positionElements();
+            } );
+
+            // Dragevents: document --- handle the few pixel units needed
+
+            ( function () {
+                var interrupted;
+                var complete = false;
+
+                angular.element( window ).on( 'resize DOMNodeInserted', function() {
+                    interrupted = true;
+                    poll( this, event );
+                });
+
+                function poll( element, event ) {
+                    interrupted = false;
+                    setTimeout( function () {
+                        if ( ! interrupted && ! complete ) {
+                            complete = true;
+                            calculateDimensions();
+                            complete = false;
+                        }
+                    }, 500 );
+                }
+
+            } ).call( this );
+        }
 
         // Implementation
         // --------------
@@ -235,6 +253,11 @@
                 top: ( event.clientY - croppedArea[0].getBoundingClientRect().top ) / model.fullHeight * 100,
                 left: ( event.clientX - croppedArea[0].getBoundingClientRect().left ) / model.fullWidth * 100
             }
+        }
+
+        function calculateDimensions( element, event ) {
+            model.fullWidth = calculateFullWidth();
+            model.fullHeight = calculateFullHeight();
         }
 
         function updateScope() {
@@ -361,6 +384,10 @@
         }
 
         function parseNumber( possibleNumber, options ) {
+            if ( typeof possibleNumber === 'undefined' && options && options.defaultValue ) {
+                return options.defaultValue;
+            }
+
             if ( typeof possibleNumber === 'string' ) {
                 possibleNumber = possibleNumber.replace(/[a-zA-Z\s]+/g, '');
             }
