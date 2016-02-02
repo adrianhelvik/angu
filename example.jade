@@ -59,10 +59,10 @@ div( class = '_content' ng-app = 'testApp' )
             p height: {{ vm.height }}
             p width: {{ vm.width }}
             crop-area(
-                bound-x = 'vm.x',
-                bound-y = 'vm.y',
-                bound-width = 'vm.width',
-                bound-height = 'vm.height',
+                crop-x = 'vm.x',
+                crop-y = 'vm.y',
+                crop-width = 'vm.width',
+                crop-height = 'vm.height',
             )
                 img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
 
@@ -72,14 +72,14 @@ div( class = '_content' ng-app = 'testApp' )
             p Pixel units are used for when no unit is specified
             crop-area(
                 border-width = '2px',
-                aspect-ratio = 'vm.aspectRatio',
+                crop-aspect-ratio = 'vm.aspectRatio',
             )
                 img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
 
         div
             h1 Select a cropping area with an aspect ratio
             crop-area(
-                aspect-ratio = '0.6'
+                crop-aspect-ratio = '0.6'
             )
                 img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
 

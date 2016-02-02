@@ -34,14 +34,14 @@
                 "</div>",
             transclude: true,
             scope: {
-                boundX:         '=',
-                boundY:         '=',
-                boundWidth:     '=',
-                boundHeight:    '=',
+                boundX:         '=cropX',
+                boundY:         '=cropY',
+                boundWidth:     '=cropWidth',
+                boundHeight:    '=cropHeight',
                 handleSize:     '@', // integer | integer text: optional
                 defaultWidth:   '@', // integer | integer text: if not set, a default value us used
                 defaultHeight:  '@', // integer | integer text: if not set, a default value us used
-                aspectRatio:    '=', // float | integer text: if not set, no aspect ratio is used
+                aspectRatio:    '=cropAspectRatio', // float | integer text: if not set, no aspect ratio is used
             },
             link: linkFunction
         };
