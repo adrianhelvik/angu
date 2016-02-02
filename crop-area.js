@@ -1,3 +1,7 @@
+/* eslint-disable */
+
+//
+// TODO: @important: Aspect ratio for height
 //
 // TODO: Clear events on scope destruction
 // TODO: Pinch and zoom causes scaling issue because of 'canvasDistance'?
@@ -74,6 +78,8 @@
 
         var croppedArea = angular.element( rootElement[0].querySelector('.CropArea-croppedArea') );
 
+        var image = rootElement.find( 'img' );
+
         var emptyElement = document.createElement( 'div' );
         emptyElement.style.visibility = 'hidden';
 
@@ -94,41 +100,34 @@
         var model = {};
 
         rootElement.ready( function () {
-            model = {
-                fullHeight: calculateFullHeight(),  // px
-                fullWidth:  calculateFullWidth(),   // px
-                x:          options.defaultX,       // % of fullWidth
-                y:          options.defaultY,       // % of fullHeight
-                height:     options.defaultHeight,  // % of fullHeight
-                width:      options.defaultWidth,   // % of fullWidth
-                canvasDistance: null
-            };
-
-            if ( scope.aspectRatio ) {
-                if ( options.defaultWidth ) {
-                    model.height = model.width / scope.aspectRatio;
-                } else {
-                    model.width = model.height * scope.aspectRatio;
-                }
-            }
-
-            positionElements();
             handle[0].setAttribute( 'draggable', 'true' );
             croppedArea[0].setAttribute( 'draggable', 'true' );
 
-            registerEvents();
-
+            // Poll for view to be loaded
             var pollerId = setInterval( function () {
-                if ( model.fullWidth !== 0 || model.fullHeight !== 0 ) {
-                    clearInterval( pollerId );
-                    positionElements();
-                }
 
                 calculateDimensions();
-                var relativeX = clientX - this.parentNode.getBoundingClientRect().left + this.offsetWidth / 2;
-                var relativeY = clientY - this.parentNode.getBoundingClientRect().top + this.offsetHeight / 2;
-                model.x = relativeX/model.fullWidth * 100 - model.canvasDistance.left;
-                model.y = relativeY/model.fullHeight * 100 - model.canvasDistance.top;
+
+                // Only load when fullWidth and fullHeight is set
+                if ( model.fullWidth !== 0 || model.fullHeight !== 0 ) {
+                    console.log( 'INITIALIZING.... BOOM' );
+                    clearInterval( pollerId );
+
+                    model = {
+                        fullHeight: calculateFullHeight(),  // px
+                        fullWidth:  calculateFullWidth(),   // px
+                        x:          options.defaultX,       // % of fullWidth
+                        y:          options.defaultY,       // % of fullHeight
+                        height:     null,                   // % of fullHeight
+                        width:      null,                   // % of fullWidth
+                        canvasDistance: null
+                    };
+
+                    setWidthAndHeight( { force: true, width: options.defaultWidth, height: options.defaultHeight } );
+                    positionElements();
+                    registerEvents();
+                }
+
             }, 200 );
 
         } );
@@ -136,14 +135,17 @@
         // Event registration
         // ------------------
 
-        // Drag events: handle
-
         function registerEvents() {
+
+            // Drag events: handle
+
             handle.on( 'dragstart', function ( event ) {
                 event.dataTransfer.setDragImage( emptyElement, 0, 0 );
             } );
 
             handle.on( 'drag touchmove', function ( event ) {
+
+                // Set clientX for both drag and touchmove
                 if ( event.clientX ) {
                     var clientX = event.clientX;
                     var clientY = event.clientY;
@@ -154,27 +156,9 @@
 
                 event.preventDefault();
 
-                var relativeX = clientX - this.parentNode.getBoundingClientRect().left + this.offsetWidth / 2;
-                var relativeY = clientY - this.parentNode.getBoundingClientRect().top + this.offsetHeight / 2;
-
-                if ( ! ( relativeX >= 0 && relativeY >= 0 ) ) {
-                    return;
-                }
-
-                model.height = relativeY/model.fullHeight*100 - model.y - handleHeight()/2;
-
-                if ( scope.aspectRatio ) {
-                    model.width = model.height * scope.aspectRatio;
-                }
-
-                else {
-                    model.width = relativeX/model.fullWidth*100 - model.x - handleWidth()/2;
-                }
-
+                setWidthAndHeight( { clientX: clientX, clientY: clientY } );
                 positionElements();
-
             } );
-
 
             // Drag events: cropped area
 
@@ -185,6 +169,8 @@
             } );
 
             croppedArea.on( 'drag touchmove', function ( event ) {
+
+                console.log( 'CROPAREA DRAG-START. MODEL:', model );
 
                 if ( event.clientX ) {
                     var clientX = event.clientX;
@@ -208,41 +194,34 @@
                     calculateDimensions();
                 }
 
-                model.x = relativeX/model.fullWidth * 100 - model.canvasDistance.left;
-                model.y = relativeY/model.fullHeight * 100 - model.canvasDistance.top;
+                model.x = relativeX / model.fullWidth * 100 - model.canvasDistance.left;
+                model.y = relativeY / model.fullHeight * 100 - model.canvasDistance.top;
 
+                // setWidthAndHeight();
                 positionElements();
+
+                console.log( 'CROPAREA DRAG-END. MODEL:', model );
             } );
 
             scope.$watch( 'aspectRatio', function () {
-                if ( scope.aspectRatio ) {
-                    model.width = model.height * scope.aspectRatio;
-                }
-
+                setWidthAndHeight();
                 positionElements();
             } );
 
             // Dragevents: document --- handle the few pixel units needed
 
             ( function () {
-                var interrupted;
-                var complete = false;
+                var resizeId = false;
 
-                angular.element( window ).on( 'resize DOMNodeInserted', function() {
-                    interrupted = true;
-                    poll( this, event );
-                });
-
-                function poll( element, event ) {
-                    interrupted = false;
-                    setTimeout( function () {
-                        if ( ! interrupted && ! complete ) {
-                            complete = true;
-                            calculateDimensions();
-                            complete = false;
-                        }
+                angular.element( window ).on( 'resize', function() {
+                    if ( resizeId !== false ) {
+                        clearTimeout( resizeId );
+                    }
+                    resizeId = setTimeout( function () {
+                        calculateDimensions();
+                        positionElements();
                     }, 500 );
-                }
+                });
 
             } ).call( this );
         }
@@ -250,7 +229,56 @@
         // Implementation
         // --------------
 
+        function setWidthAndHeight( options ) {
+
+            if ( ! options ) options = {};
+
+            var clientX = options.clientX || 0;
+            var clientY = options.clientY || 0;
+
+            var relativeX = clientX - container[0].getBoundingClientRect().left + handle[0].offsetWidth / 2;
+            var relativeY = clientY - container[0].getBoundingClientRect().top + handle[0].offsetHeight / 2;
+
+            if ( ! ( relativeX >= 0 && relativeY >= 0 ) ) {
+                if ( ! options.force ) {
+                    return;
+                }
+            }
+
+            // Set width and height
+            if ( options.width && options.height ) {
+                var possibleWidth = options.width;
+                var possibleHeight = options.height;
+            } else if ( options.clientX && options.clientY ) {
+                var possibleHeight = relativeY / model.fullHeight * 100 - model.y - handleHeight() / 2;
+                var possibleWidth = relativeX / model.fullWidth * 100 - model.x - handleWidth() / 2;
+            } else {
+                var possibleHeight = model.height;
+                var possibleWidth = model.width;
+            }
+
+            // Attempt to set width based on aspect ratio and height
+            if ( scope.aspectRatio ) {
+                possibleWidth = aspectRatioWidth( possibleHeight );
+            }
+
+            if ( possibleWidth >= 100 ) {
+                console.log( 'WIDTH OVERFLOWED' );
+
+                var overflow = 100 - possibleWidth;
+
+                model.width = possibleWidth - overflow;
+                model.height = aspectRatioHeight( model.width );
+            } else {
+                console.log( 'NOT OVERFLOWED. width:', possibleWidth );
+                model.width = possibleWidth;
+                model.height = possibleHeight;
+            }
+
+        }
+
         function calculateCanvasDistance( event ) {
+
             return model.canvasDistance = {
                 top: ( event.clientY - croppedArea[0].getBoundingClientRect().top ) / model.fullHeight * 100,
                 left: ( event.clientX - croppedArea[0].getBoundingClientRect().left ) / model.fullWidth * 100
@@ -258,15 +286,17 @@
         }
 
         function calculateDimensions( element, event ) {
+
             model.fullWidth = calculateFullWidth();
             model.fullHeight = calculateFullHeight();
         }
 
         function updateScope() {
-            scope.boundX = model.x;
-            scope.boundY = model.y;
-            scope.boundWidth = model.width;
-            scope.boundHeight = model.height;
+
+            scope.boundX = parseInt( model.x * image[0].naturalWidth / 100 );
+            scope.boundY = parseInt( model.y * image[0].naturalHeight / 100 );
+            scope.boundWidth = parseInt( model.width * image[0].naturalWidth / 100 );
+            scope.boundHeight = parseInt( model.height * image[0].naturalHeight / 100 );
 
             if ( ! scope.$root.$$phase ) {
                 scope.$apply();
@@ -282,6 +312,12 @@
         }
 
         function positionElements() {
+
+            if ( ! model.fullWidth || ! model.fullHeight ) {
+                throw new Error( 'positionElements: invalid model.fullWidth or model.fullHeight' );
+            }
+
+            console.log( 'positionElements. model:', model );
 
             boundCheck();
             updateScope();
@@ -409,24 +445,64 @@
             return ! isNaN( parseFloat( possibleNumber ) ) && isFinite( possibleNumber );
         }
 
+        /**
+         * When aspect ratio is 1, the pixel width and pixel height of the cropArea
+         * should be equal. The height is the variable in this equation.
+         * We have:
+         *
+         * pxWidth = aspectRatio * pxHeight
+         *
+         * and then we need to convert pxWidth to percentages.
+         *
+         * percentageWidth = pxWidth / model.fullWidth * 100
+         *
+         * which results is the equation:
+         *
+         * percentageWidth = ( aspectRatio * pxHeight ) / model.fullWidth * 100
+         */
+        function aspectRatioWidth( height ) {
+
+            var pxHeight = height * model.fullHeight / 100;
+            var pxWidth = scope.aspectRatio * pxHeight;
+            var percentageWidth = pxWidth / model.fullWidth * 100;
+
+            return percentageWidth;
+        }
+
+        function aspectRatioHeight( width ) {
+            if ( width > 100 ) width = 100;
+
+            var pxWidth = width * model.fullWidth / 100;
+
+            var pxHeight = pxWidth / scope.aspectRatio;
+            var percentageHeight = pxHeight / model.fullHeight * 100;
+
+            return percentageHeight;
+        }
+
+        function croppedAreaAspectRatio() {
+            return croppedArea[0].offsetWidth / croppedArea[0].offsetHeight;
+        }
+
+        // Currently ok
         function boundCheck() {
 
             // Negative/zero width
-            if ( model.width <= 0 ) {
-                model.width = 1;
+            if ( model.width < 0 ) {
+                model.width = 0;
             }
 
             // Negative/zero height
-            if ( model.height <= 0 ) {
-                model.height = 1;
+            if ( model.height < 0 ) {
+                model.height = 0;
             }
 
-            // Higher than canvas
+            // Higher than canvas (RAR)
             if ( model.height > 100 ) {
                 model.height = ( 100 - model.y );
 
                 if ( scope.aspectRatio ) {
-                    model.width = model.height * scope.aspectRatio;
+                    model.width = aspectRatioWidth( croppedArea[0].offsetHeight / model.fullHeight * 100 );
                 }
             }
 
@@ -440,7 +516,6 @@
                 model.width = 100;
 
                 if ( scope.aspectRatio ) {
-                    model.height = model.width / scope.aspectRatio; // Check height??? Loopy?
                 }
             }
 
