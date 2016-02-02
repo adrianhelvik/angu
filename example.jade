@@ -51,7 +51,7 @@ style.
 
 div( class = '_content' ng-app = 'testApp' )
     div( ng-controller = 'ctrl as vm' )
-        
+
         div
             h1 Get scope variables from crop-area
             p x: {{ vm.x }}
@@ -63,30 +63,26 @@ div( class = '_content' ng-app = 'testApp' )
                 bound-y = 'vm.y',
                 bound-width = 'vm.width',
                 bound-height = 'vm.height',
-                default-width = '400px',
-                default-height = '200px'
             )
                 img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
-        
+
         div
             h1 Enter an aspect ratio
             input.largeInput( ng-model = 'vm.aspectRatio' )
             p Pixel units are used for when no unit is specified
             crop-area(
-                handle-size = '40px',
                 border-width = '2px',
                 aspect-ratio = 'vm.aspectRatio',
-                default-width = '400px'
             )
                 img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
-        
+
         div
             h1 Select a cropping area with an aspect ratio
             crop-area(
                 aspect-ratio = '0.6'
             )
                 img( src = 'https://upload.wikimedia.org/wikipedia/commons/4/4a/%C5%A0trbac_2.jpg' )
-            
+
 p Many thanks to Kovacs.szilard of Wikimedia for releasing the imageunder a public licence.
 
 script( src = 'https://code.angularjs.org/1.4.8/angular.js' )

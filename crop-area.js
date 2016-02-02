@@ -6,7 +6,7 @@
     'use strict';
 
     var cropArea = angular.module( 'cropArea', [] );
-    
+
     cropArea.directive( 'cropArea', function () {
         return {
             restrict: 'E',
@@ -37,7 +37,7 @@
                 defaultHeight:  '@', // integer | integer text: if not set, a default value us used
                 aspectRatio:    '=', // float | integer text: if not set, no aspect ratio is used
             },
-            link: linkFunction 
+            link: linkFunction
         };
     } );
 
@@ -74,9 +74,9 @@
 
         var options = {};
 
-        options.handleSize    = parseNumber( scope.handleSize,    { defaultValue: 20 } );
-        options.defaultHeight = parseNumber( scope.defaultHeight, { defaultValue: calculateFullHeight() } );
-        options.defaultWidth  = parseNumber( scope.defaultWidth,  { defaultValue: calculateFullWidth() } );
+        options.handleSize    = parseNumber( scope.handleSize,    { defaultValue: 3 } );
+        options.defaultHeight = parseNumber( scope.defaultHeight, { defaultValue: 80 } );
+        options.defaultWidth  = parseNumber( scope.defaultWidth,  { defaultValue: 80 } );
         options.defaultX      = parseNumber( scope.defaultX,      { defaultValue: 10 });
         options.defaultY      = parseNumber( scope.defaultY,      { defaultValue: 10 });
 
@@ -84,16 +84,16 @@
         // -----
 
         var model = {
-            x:          options.defaultX,
-            y:          options.defaultY,
-            height:     options.defaultHeight,
-            width:      options.defaultWidth,
-            fullHeight: calculateFullHeight(),
-            fullWidth:  calculateFullWidth()
+            fullHeight: calculateFullHeight(),  // px
+            fullWidth:  calculateFullWidth(),   // px
+            x:          options.defaultX,       // % of fullWidth
+            y:          options.defaultY,       // % of fullHeight
+            height:     options.defaultHeight,  // % of fullHeight
+            width:      options.defaultWidth,   // % of fullWidth
         };
 
         if ( scope.aspectRatio ) {
-            
+
             if ( options.defaultWidth ) {
                 model.height = model.width / scope.aspectRatio;
             } else {
@@ -108,7 +108,7 @@
         handle[0].setAttribute( 'draggable', 'true' );
         croppedArea[0].setAttribute( 'draggable', 'true' );
 
-        // Drag events: handle
+        // Drag events: handle // DONE: ok
 
         handle.on( 'dragstart', function ( event ) {
             event.dataTransfer.setDragImage( emptyElement, 0, 0 );
@@ -119,11 +119,12 @@
             if ( event.pageX ) {
                 var pageX = event.pageX;
                 var pageY = event.pageY;
-            } else {
-                event.preventDefault();
+            } else if ( event.touches ) {
                 var pageX = event.touches[0].pageX;
                 var pageY = event.touches[0].pageY;
-            }
+            } else return;
+
+            event.preventDefault();
 
             var relativeX = pageX - this.parentNode.offsetLeft + this.offsetWidth / 2;
             var relativeY = pageY - this.parentNode.offsetTop + this.offsetHeight / 2;
@@ -132,18 +133,23 @@
                 return;
             }
 
-            model.height = relativeY - model.y - options.handleSize/2;
+            model.height = relativeY/model.fullHeight*100 - model.y - options.handleSize/2;
 
             if ( scope.aspectRatio ) {
                 model.width = model.height * scope.aspectRatio;
             }
 
             else {
-                model.width = relativeX - model.x - options.handleSize/2;
+                model.width = relativeX/model.fullWidth*100 - model.x - options.handleSize/2;
             }
 
             positionElements();
 
+        } );
+
+        // TODO: test
+        angular.element( document ).on( 'resize', function ( event ) {
+            positionElements();
         } );
 
         // Drag events: cropped area
@@ -163,15 +169,18 @@
                 var pageY = event.touches[0].pageY;
             }
 
-            var relativeX = pageX - this.parentNode.offsetLeft;
-            var relativeY = pageY - this.parentNode.offsetTop;
+            var relativeX = pageX - this.parentNode.offsetLeft; //..
+            var relativeY = pageY - this.parentNode.offsetTop; //..
 
             if ( ! ( relativeX >= 0 && relativeY >= 0 ) ) {
                 return;
             }
 
-            model.x = relativeX - model.width/2;
-            model.y = relativeY - model.height/2;
+            // current 1
+            model.x = relativeX/model.fullWidth * 100 - model.width/2; //...
+            model.y = relativeY/model.fullHeight * 100 - model.height/2; //...
+
+            console.log( model.x, model.y );
 
             positionElements();
         } );
@@ -192,35 +201,29 @@
             scope.boundY = model.y;
             scope.boundWidth = model.width;
             scope.boundHeight = model.height;
-            
+
             if ( ! scope.$root.$$phase ) {
                 scope.$apply();
             }
         }
 
-        function roundUnits() {
-            model.x = parseInt( model.x );
-            model.y = parseInt( model.y );
-            model.width = parseInt( model.width );
-            model.height = parseInt( model.height );
-        }
-
         function positionElements() {
-            
-            roundUnits();
+
             boundCheck();
             updateScope();
+
+            console.log( 'model @ positionElements', model );
 
             // Borders
             // -------
 
             var vertical = {
                 'height': '2px',
-                'width': model.width + 'px'
+                'width': model.width + '%'
             }
 
             var horizontal = {
-                'height': model.height + 'px',
+                'height': model.height + '%',
                 'width': '2px'
             };
 
@@ -230,75 +233,75 @@
             borders.right.css( horizontal );
 
             borders.top.css( {
-                'left': model.x + 'px',
-                'top': model.y + 'px'
+                'left': model.x + '%',
+                'top': model.y + '%'
             } );
 
             borders.left.css( {
-                'left': model.x + 'px',
-                'top': model.y + 'px'
+                'left': model.x + '%',
+                'top': model.y + '%'
             } );
 
             borders.right.css( {
-                'left': ( model.x + model.width ) + 'px',
-                'top': model.y + 'px'
+                'left': ( model.x + model.width ) + '%',
+                'top': model.y + '%'
             } );
 
             borders.bottom.css( {
-                'left': model.x + 'px',
-                'top': ( model.y + model.height ) + 'px'
+                'left': model.x + '%',
+                'top': ( model.y + model.height ) + '%'
             } );
 
             // Handle
             // ------
 
             handle.css( {
-                'left': ( model.x + model.width - options.handleSize/2 ) + 'px',
-                'top': ( model.y + model.height - options.handleSize/2 ) + 'px',
-                'border-radius': options.handleSize + 'px',
-                'width': options.handleSize + 'px',
-                'height': options.handleSize + 'px',
+                'left': ( model.x + model.width - options.handleSize/2 ) + '%',
+                'top': ( model.y + model.height - options.handleSize/2 ) + '%',
+                'border-radius': '100%',
+                'width': options.handleSize + '%',
+                'height': options.handleSize + '%',
             } );
 
             // Shades
             // ------
 
             shades.left.css( {
-                'top': 0 + 'px',
-                'left': 0 + 'px',
-                'width': model.x + 'px',
-                'height': model.fullHeight + 'px'
+                'top': 0 + '%',
+                'left': 0 + '%',
+                'width': model.x + '%',
+                'height': '100%'
             } );
 
             shades.right.css( {
-                'top': 0 + 'px',
-                'right': 0 + 'px',
-                'width': ( model.fullWidth - ( model.x + model.width ) ) + 'px',
-                'height': model.fullHeight + 'px'
+                'top': 0 + '%',
+                'right': 0 + '%',
+                'width': ( 100 - ( model.x + model.width ) ) + '%',
+                'height': '100%'
             } );
 
             shades.top.css( {
-                'top': 0 + 'px',
-                'left': model.x + 'px',
-                'width': model.width + 'px',
-                'height': model.y + 'px'
+                'top': 0 + '%',
+                'left': model.x + '%',
+                'width': model.width + '%',
+                'height': model.y + '%'
             } );
 
             shades.bottom.css( {
-                'bottom': 0 + 'px',
-                'left': model.x + 'px',
-                'width': model.width + 'px',
-                'height': ( model.fullHeight - ( model.y + model.height ) ) + 'px'
+                'bottom': 0 + '%',
+                'left': model.x + '%',
+                'width': model.width + '%',
+                'height': ( 100 - ( model.y + model.height ) ) + '%'
             } );
 
             // Cropped area
             // ------------
 
             croppedArea.css( {
-                'top': model.y + 'px',
-                'left': model.x + 'px',
-                'width': model.width + 'px',
-                'height': model.height + 'px'
+                'top': model.y + '%',
+                'left': model.x + '%',
+                'width': model.width + '%',
+                'height': model.height + '%'
             } );
         }
 
@@ -343,8 +346,8 @@
             }
 
             // Higher than canvas
-            if ( model.height > model.fullHeight ) {
-                model.height = ( model.fullHeight - model.y );
+            if ( model.height > 100 ) {
+                model.height = ( 100 - model.y );
 
                 if ( scope.aspectRatio ) {
                     model.width = model.height * scope.aspectRatio;
@@ -352,27 +355,27 @@
             }
 
             // below canvas
-            if ( ( model.height + model.y ) > model.fullHeight ) {
-                model.y = ( model.fullHeight - model.height );
+            if ( ( model.height + model.y ) > 100 ) {
+                model.y = ( 100 - model.height );
             }
 
             // Wider than canvas
-            if ( model.width > model.fullWidth ) {
-                model.width = model.fullWidth;
+            if ( model.width > 100 ) {
+                model.width = 100;
 
                 if ( scope.aspectRatio ) {
                     model.height = model.width / scope.aspectRatio; // Check height??? Loopy?
                 }
             }
-            
+
             // Wider than canvas
-            if ( model.width > model.fullWidth ) {
-                model.x = ( model.fullWidth - model.width );
+            if ( model.width > 100 ) {
+                model.x = ( 100 - model.width );
             }
 
             // To the right of canvas
-            if ( ( model.x + model.width ) > model.fullWidth ) {
-                model.x = ( model.fullWidth - model.width );
+            if ( ( model.x + model.width ) > 100 ) {
+                model.x = ( 100 - model.width );
             }
 
             // To the left of canvas
