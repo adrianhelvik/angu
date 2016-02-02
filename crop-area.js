@@ -125,6 +125,8 @@
                 }
 
                 calculateDimensions();
+                var relativeX = clientX - this.parentNode.getBoundingClientRect().left + this.offsetWidth / 2;
+                var relativeY = clientY - this.parentNode.getBoundingClientRect().top + this.offsetHeight / 2;
                 model.x = relativeX/model.fullWidth * 100 - model.canvasDistance.left;
                 model.y = relativeY/model.fullHeight * 100 - model.canvasDistance.top;
             }, 200 );
