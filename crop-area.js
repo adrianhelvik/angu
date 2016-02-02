@@ -1,6 +1,6 @@
 //
 // TODO: Clear events on scope destruction
-// TODO: Pinch and zoom causes scaling issue because of 'canvasDistance'
+// TODO: Pinch and zoom causes scaling issue because of 'canvasDistance'?
 //
 
 
@@ -140,14 +140,14 @@
                 return;
             }
 
-            model.height = relativeY/model.fullHeight*100 - model.y - options.handleSize/2;
+            model.height = relativeY/model.fullHeight*100 - model.y - handleHeight()/2;
 
             if ( scope.aspectRatio ) {
                 model.width = model.height * scope.aspectRatio;
             }
 
             else {
-                model.width = relativeX/model.fullWidth*100 - model.x - options.handleSize/2;
+                model.width = relativeX/model.fullWidth*100 - model.x - handleWidth()/2;
             }
 
             positionElements();
@@ -248,6 +248,14 @@
             }
         }
 
+        function handleWidth() {
+            return options.handleSize / model.fullWidth * 1000;
+        }
+
+        function handleHeight() {
+            return options.handleSize / model.fullHeight * 1000;
+        }
+
         function positionElements() {
 
             boundCheck();
@@ -295,11 +303,11 @@
             // ------
 
             handle.css( {
-                'left': ( model.x + model.width - options.handleSize/2 ) + '%',
-                'top': ( model.y + model.height - options.handleSize/2 ) + '%',
+                'left': ( model.x + model.width - handleWidth()/2 ) + '%',
+                'top': ( model.y + model.height - handleHeight()/2 ) + '%',
                 'border-radius': '100%',
-                'width': options.handleSize + '%',
-                'height': options.handleSize + '%',
+                'width': handleWidth() + '%',
+                'height': handleHeight() + '%',
             } );
 
             // Shades
