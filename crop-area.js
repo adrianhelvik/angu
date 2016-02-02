@@ -90,6 +90,7 @@
             y:          options.defaultY,       // % of fullHeight
             height:     options.defaultHeight,  // % of fullHeight
             width:      options.defaultWidth,   // % of fullWidth
+            canvasDistance: null
         };
 
         if ( scope.aspectRatio ) {
@@ -156,6 +157,12 @@
 
         croppedArea.on( 'dragstart', function ( event ) {
             event.dataTransfer.setDragImage( emptyElement, 0, 0 );
+
+            model.canvasDistance = {
+                top: ( event.clientY - this.getBoundingClientRect().top ) / model.fullHeight * 100,
+                left: ( event.clientX - this.getBoundingClientRect().left ) / model.fullWidth * 100
+            }
+
         } );
 
         croppedArea.on( 'drag touchmove', function ( event ) {
@@ -163,24 +170,23 @@
             if ( event.pageX ) {
                 var pageX = event.pageX;
                 var pageY = event.pageY;
-            } else {
+            } else if ( event.touches ) {
                 event.preventDefault();
                 var pageX = event.touches[0].pageX;
                 var pageY = event.touches[0].pageY;
+            } else {
+                return;
             }
 
-            var relativeX = pageX - this.parentNode.offsetLeft; //..
-            var relativeY = pageY - this.parentNode.offsetTop; //..
+            var relativeX = pageX - this.parentNode.offsetLeft;
+            var relativeY = pageY - this.parentNode.offsetTop;
 
             if ( ! ( relativeX >= 0 && relativeY >= 0 ) ) {
                 return;
             }
 
-            // current 1
-            model.x = relativeX/model.fullWidth * 100 - model.width/2; //...
-            model.y = relativeY/model.fullHeight * 100 - model.height/2; //...
-
-            console.log( model.x, model.y );
+            model.x = relativeX/model.fullWidth * 100 - model.canvasDistance.left;
+            model.y = relativeY/model.fullHeight * 100 - model.canvasDistance.top;
 
             positionElements();
         } );
@@ -211,8 +217,6 @@
 
             boundCheck();
             updateScope();
-
-            console.log( 'model @ positionElements', model );
 
             // Borders
             // -------
